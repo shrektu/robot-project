@@ -3,13 +3,13 @@ PORT		= /dev/tty.wchusbserial10
 DEVICE		= atmega328p
 PROGRAMMER	= arduino
 BAUD		= 115200
-COMPILE		= avr-gcc -Wall -Os -mmcu=$(DEVICE) -I inc # Dodaj do ścieżki folder inc
+COMPILE		= avr-gcc -Wall -Os -mmcu=$(DEVICE) -I inc # Add 'inc' folder to include path
 
 default: compile upload clean
 
 compile:
 	$(COMPILE) -c $(FILENAME).c -o $(FILENAME).o
-	$(COMPILE) -c src/motors.c -o motors.o	# Kompilacja pliku motors.c
+	$(COMPILE) -c src/motors.c -o motors.o	# Compile motors.c file
 	$(COMPILE) -o $(FILENAME).elf $(FILENAME).o motors.o
 	avr-objcopy -j .text -j .data -O ihex $(FILENAME).elf $(FILENAME).hex
 	avr-size $(FILENAME).elf
