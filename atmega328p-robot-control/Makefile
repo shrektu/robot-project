@@ -1,5 +1,6 @@
 FILENAME	= main
-PORT		= /dev/tty.wchusbserial10
+# PORT		= /dev/tty.wchusbserial10
+PORT		= /dev/ttyUSB0
 DEVICE		= atmega328p
 PROGRAMMER	= arduino
 BAUD		= 115200
@@ -9,9 +10,11 @@ default: compile upload clean
 
 compile:
 	$(COMPILE) -c $(FILENAME).c -o $(FILENAME).o
-	$(COMPILE) -c src/motors.c -o motors.o	# Compile motors.c file
-	$(COMPILE) -c src/wire.c -o wire.o	# Compile wire.c file
-	$(COMPILE) -o $(FILENAME).elf $(FILENAME).o motors.o wire.o
+	$(COMPILE) -c src/motors.c -o motors.o		# Compile motors.c file
+	$(COMPILE) -c src/wire.c -o wire.o			# Compile wire.c file
+	$(COMPILE) -c src/lcd.c -o lcd.o			# Compile lcd.c file
+	$(COMPILE) -c src/ds18b20.c -o ds18b20.o	# Compile ds18b20.c file
+	$(COMPILE) -o $(FILENAME).elf $(FILENAME).o motors.o wire.o lcd.o ds18b20.o
 	avr-objcopy -j .text -j .data -O ihex $(FILENAME).elf $(FILENAME).hex
 	avr-size $(FILENAME).elf
 
@@ -22,6 +25,8 @@ clean:
 	rm $(FILENAME).o
 	rm motors.o
 	rm wire.o
+	rm lcd.o
+	rm ds18b20.o
 	rm $(FILENAME).elf
 	rm $(FILENAME).hex
 

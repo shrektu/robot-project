@@ -21,3 +21,9 @@ void wire_write(uint8_t byte);
 
 /* This function reads a byte of data from 1-wire interface */
 uint8_t wire_read(void);
+
+/* This function sends a reset sequence via 1-wire interface */
+uint8_t wire_reset(void);
+
+/* This function calculates the CRC from the data array */
+uint8_t wire_crc(const uint8_t* data, const uint8_t len);

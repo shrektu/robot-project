@@ -7,6 +7,9 @@
 #include <util/delay.h>
 
 #include "inc/motors.h"
+#include "inc/wire.h"
+#include "inc/lcd.h"
+#include "inc/ds18b20.h"
 
 
 int main(void) {
