@@ -1,4 +1,5 @@
 #include "../inc/motors.h"
+#include "../inc/adc.h"
 
 
 #define MOTOR_SIDE_RIGHT        (RIGHT_MOTOR_ENABLE)
@@ -55,7 +56,6 @@ static void motor_spin(const uint8_t motor_side, const uint8_t direction) {
     } 
 }
 
-
 /* Function definitions from motors.h */
 
 void DRV8835_init(void) {
@@ -68,15 +68,11 @@ void DRV8835_init(void) {
 
 void PWM_init(void) {
     TCCR0A |= ((1 << WGM00) | (1 << WGM01));    // Fast PWM mode
-    TCCR0B |= (1 << CS02);                      // prescaler set to 256; PWM freq ~62,5kHz
+    TCCR0B |= (1 << CS02);      // prescaler set to 256; PWM freq ~62,5kHz
 }
 
-void PWM_set_duty_cycle(uint8_t percentage) {
-    if (percentage >= 100) {
-        percentage = 100;
-    }
-
-    uint16_t PWM_value = (percentage * 255) / 100;
+void PWM_set_duty_cycle(const uint16_t adc_value) {
+    uint16_t PWM_value = (adc_value * 100) / 1024;
     OCR0A = (uint8_t)PWM_value;
     OCR0B = (uint8_t)PWM_value;
 }

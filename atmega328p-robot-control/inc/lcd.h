@@ -26,25 +26,25 @@
 #define LCD_E_PIN		PIND
 #define LCD_E			(1 << PIND3)
 
-#define LCD_DB4_DIR		DDRD
-#define LCD_DB4_PORT	PORTD
-#define LCD_DB4_PIN		PIND
-#define LCD_DB4			(1 << PIND4)
+#define LCD_DB4_DIR		DDRB
+#define LCD_DB4_PORT	PORTB
+#define LCD_DB4_PIN		PINB
+#define LCD_DB4			(1 << PINB4)
 
-#define LCD_DB5_DIR		DDRD
-#define LCD_DB5_PORT	PORTD
-#define LCD_DB5_PIN		PIND
-#define LCD_DB5			(1 << PIND5)
+#define LCD_DB5_DIR		DDRB
+#define LCD_DB5_PORT	PORTB
+#define LCD_DB5_PIN		PINB
+#define LCD_DB5			(1 << PINB5)
 
-#define LCD_DB6_DIR		DDRD
-#define LCD_DB6_PORT	PORTD
-#define LCD_DB6_PIN		PIND
-#define LCD_DB6			(1 << PIND6)
+#define LCD_DB6_DIR		DDRC
+#define LCD_DB6_PORT	PORTC
+#define LCD_DB6_PIN		PINC
+#define LCD_DB6			(1 << PINC4)
 
-#define LCD_DB7_DIR		DDRD
-#define LCD_DB7_PORT	PORTD
-#define LCD_DB7_PIN		PIND
-#define LCD_DB7			(1 << PIND7)
+#define LCD_DB7_DIR		DDRC
+#define LCD_DB7_PORT	PORTC
+#define LCD_DB7_PIN		PINC
+#define LCD_DB7			(1 << PINC5)
 
 
 
