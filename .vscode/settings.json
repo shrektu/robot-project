@@ -1,0 +1,4 @@
+{
+    "idf.flashType": "UART",
+    "cmake.configureOnOpen": false
+}
