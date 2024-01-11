@@ -72,7 +72,7 @@ void PWM_init(void) {
 }
 
 void PWM_set_duty_cycle(const uint16_t adc_value) {
-    uint16_t PWM_value = (adc_value * 100) / 1024;
+    uint16_t PWM_value = (uint32_t)(adc_value * 255) / 1024;
     OCR0A = (uint8_t)PWM_value;
     OCR0B = (uint8_t)PWM_value;
 }

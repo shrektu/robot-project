@@ -147,7 +147,6 @@ void lcd_home(void)
 
 void lcd_init(void)
 {
-    uint8_t i;
     LCD_DB4_DIR |= LCD_DB4; 
     LCD_DB5_DIR |= LCD_DB5; 
     LCD_DB6_DIR |= LCD_DB6; 
@@ -160,7 +159,7 @@ void lcd_init(void)
     LCD_E_PORT &= ~LCD_E;  
     LCD_RW_PORT &= ~LCD_RW;
 
-    for (i = 0; i < 3; i++) 
+    for (uint8_t i = 0; i < 3; i++) 
     {
         LCD_E_PORT |= LCD_E;
         lcd_out_nibble(0x03);
