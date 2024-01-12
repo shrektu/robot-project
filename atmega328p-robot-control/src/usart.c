@@ -9,7 +9,7 @@
 
 
 #define BAUD		(9600)
-#define UBBR		((F_CPU) / (16) / ((BAUD) - (1))
+#define UBBR		((F_CPU) / (16) / ((BAUD) - (1)))
 
 
 /* Function definitions from usart.h */
@@ -32,4 +32,5 @@ uint8_t USART_receive(void) {
         return UDR0;
     } else {
         return 0xFF;	// return 0xFF if there is no data to receive
+    }
 }

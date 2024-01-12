@@ -13,6 +13,7 @@
 #include "inc/lcd.h"
 #include "inc/adc.h"
 #include "inc/usart.h"
+#include "inc/HC-SR04.h"
 
 
 #define LCD_FUNCTIONS_CNT       (3)  // Number of LCD functions
@@ -28,6 +29,9 @@ static void read_potentiometer(void);
 
 // This function reads ADC value from LM35DZ temperature sensor
 static void read_lm35(void);
+
+// This function calculates distance in cm based on pulse duration
+static uint8_t calc_distance(uint16_t pulse_duration);
 
 
 // This function shows the temperature on the LCD
@@ -49,7 +53,7 @@ static void (*lcd_functions[LCD_FUNCTIONS_CNT])(void) = {
 
 // Array of function pointers to each motors function
 static void (*motors_functions[MOTORS_FUNCTIONS_CNT])(void) = {
-    robot_stop
+    robot_stop,
     robot_move_forward,
     robot_move_backward,
     robot_turn_left,
@@ -122,6 +126,10 @@ static void read_lm35(void) {
     ADMUX |= (1 << MUX0);
 
     ADC_start_conversion();
+}
+
+static uint8_t calc_distance(uint16_t pulse_duration) {
+    return pulse_duration / 58;
 }
 
 static void show_temp(void) {
