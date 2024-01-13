@@ -4,6 +4,7 @@
 
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #include <avr/io.h>
 #include <util/delay.h>
@@ -78,11 +79,18 @@ typedef enum {
 }MOTOR_FUNCTION_t;
 
 
+static volatile uint16_t echo_width = 0;
+static volatile uint8_t echo_flag = 0;
+
 static volatile uint16_t adc_channel0_value = 0;
 static volatile uint16_t adc_channel1_value = 0;
 
 static volatile uint8_t duty_cycle_percent = 0;
-static volatile uint8_t distance = 0;
+static volatile uint16_t distance = 0;
+
+static volatile uint8_t timer = 1;
+
+char buf [10];
 
 static volatile LCD_FUNCTION_t current_lcd_function = SHOW_TEMP;
 static volatile MOTOR_FUNCTION_t current_motors_function = STOP;
@@ -92,11 +100,11 @@ int main(void) {
     lcd_init();
     ADC_init();
     timer2_init();
+    HCSR04_init();
 
     sei();
 
     while(1) {
-
     }
 
     return EXIT_SUCCESS;
@@ -150,13 +158,26 @@ static void show_distance(void) {
     lcd_go_to(0, 0);
     lcd_print_text("Distance:");
     lcd_go_to(0, 1);
-    lcd_printf("%u cm", distance);
+    distance = (echo_width + 29) / 58;
+    if (distance > 100) {
+        lcd_print_text("100+ cm");
+    } else {
+        lcd_printf("%u cm", distance);
+    }
 }
 
 ISR(TIMER2_COMPA_vect) {
-    read_potentiometer();
-    lcd_clear();
-    show_pwm_duty_cycle();
+    if (timer % 6 == 0) {
+        if (echo_flag) {
+            lcd_clear();
+            show_distance();
+            echo_flag = 0;
+        }
+        HCSR04_start_measurement();
+        timer = 1;
+    } else {
+        timer += 1;
+    }
 }
 
 ISR(ADC_vect) {
@@ -172,4 +193,18 @@ ISR(USART_RX_vect) {
     if (UDR0 != 0xFF) {
         uint8_t received_command = UDR0;
     }
+}
+
+ISR(TIMER1_CAPT_vect) {
+    static uint16_t last_capture;
+
+    if (!(TCCR1B & (1 << ICES1))) {
+        echo_width = (ICR1 - last_capture) / 2;     // Timer1 prescaler is 8, F_CPU is 16M so timer1 frequency is 2MHz. 
+                                                    // Division by 2 makes it 1 MHz - 1us
+        echo_flag = 1;
+    }
+    
+    last_capture = ICR1;
+    // change interrupt trigger to the other edge
+    TCCR1B ^= (1 << ICES1);
 }

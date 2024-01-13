@@ -12,13 +12,6 @@
 #define TIMER1_PRESCALER        (8)
 
 
-/* Volatile global variables */
-
-volatile uint16_t startTime = 0;
-volatile uint16_t endTime = 0;
-volatile uint8_t measureComplete = 0;   // This flag is set when the measurement is completed
-                                
-
 /* Static helper functions */
 
 static void timer1_init(void) {
@@ -34,24 +27,19 @@ void HCSR04_init(void) {
     // configure TRIG pin as an output
     HCSR04_TRIG_DDR |= (1 << HCSR04_TRIG_PIN);
 
-    // configure ECHO pin as an input 
+    // configure ECHO pin as an input and pull up to high 
     HCSR04_ECHO_DDR &= ~(1 << HCSR04_ECHO_PIN);
+    HCSR04_ECHO_PORT |= (1 << HCSR04_ECHO_PIN);
 
     // Initialise Timer/Counter 1
     timer1_init();
 }
 
-uint16_t HCSR04_get_pulse_duration(void) {
+void HCSR04_start_measurement(void) {
     // set TRIG pin for 10us to start measuring
     HCSR04_TRIG_PORT |= (1 << HCSR04_TRIG_PIN);
     _delay_us(10);
     HCSR04_TRIG_PORT &= ~(1 << HCSR04_TRIG_PIN);
-    
-    while (!measureComplete);
-
-    uint16_t pulseDuration = endTime - startTime;
-    
-    return (uint32_t)pulseDuration * 1000 / (TIMER1_PRESCALER * F_CPU);
 }
 
 

@@ -14,7 +14,7 @@
 #define LCD_RS_DIR		DDRB
 #define LCD_RS_PORT 	PORTB
 #define LCD_RS_PIN		PINB
-#define LCD_RS			(1 << PINB0)
+#define LCD_RS			(1 << PINB2)
 
 #define LCD_RW_DIR		DDRB
 #define LCD_RW_PORT		PORTB
