@@ -12,6 +12,9 @@ void UART::begin(uint32_t baud_rate) {
     serial->begin(baud_rate);
 }
 
+void UART::write(uint8_t byte) {
+    serial->write(byte);
+}
 void UART::sendData(const uint8_t* data, uint32_t length) {
     for (uint32_t i = 0; i < length; i++) {
         serial->write(data[i]);

@@ -10,6 +10,7 @@ class UART {
         ~UART();
 
         void begin(uint32_t baud_rate);
+        void write(uint8_t byte);
         void sendData(const uint8_t* data, uint32_t length);
         void receiveData(uint8_t* buffer, uint32_t buffer_size);
 

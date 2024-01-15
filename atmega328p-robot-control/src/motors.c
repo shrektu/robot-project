@@ -1,60 +1,48 @@
 #include "../inc/motors.h"
 #include "../inc/adc.h"
 
+#include <avr/interrupt.h>
+
 
 #define MOTOR_SIDE_RIGHT        (RIGHT_MOTOR_ENABLE)
 #define MOTOR_SIDE_LEFT         (LEFT_MOTOR_ENABLE)
 
-#define DIRECTION_FORWARD       (1U)
-#define DIRECTION_BACKWARD      (0U)
+#define DIRECTION_BACKWARD      (1U)
+#define DIRECTION_FORWARD       (0U)
+
+
 
 
 /* Static helper functions */
 
-static void motor_stop(const uint8_t motor_side) {
-    // if the motor PWM pin is connected to the timer - disconnect it and set it to LOW
-    if (motor_side == MOTOR_SIDE_RIGHT) {
-        if (TCCR0A & (1 << COM0A1)) {
-            TCCR0A &= ~(1 << COM0A1);
-        }
+static void right_motor_spin(uint8_t direction) {
+    TCCR0A |= (1 << COM0A1);
 
-    } else if (motor_side == MOTOR_SIDE_LEFT) {
-        if (TCCR0A & (1 << COM0B1)) {
-            TCCR0A &= ~(1 << COM0B1);
-        }
-    }
-
-    PORTD &= ~(1 << motor_side);
-}
-
-static void motor_spin(const uint8_t motor_side, const uint8_t direction) {
-    uint8_t phase = 0;
-
-    // assign the given (right/left) motor phase pin to the temp variable 'phase' 
-    if (motor_side == MOTOR_SIDE_RIGHT) {
-        phase = (uint8_t)RIGHT_MOTOR_PHASE;    
-    } else if (motor_side == MOTOR_SIDE_LEFT) {
-        phase = (uint8_t)LEFT_MOTOR_PHASE;
-    }
-    
-    // set or reset the given (right/left) motor phase pin to change the spinning direction
     if (direction == DIRECTION_FORWARD) {
-        PORTD |= (1 << phase);
-    } else if (direction == DIRECTION_BACKWARD) {
-        PORTD &= ~(1 << phase);
+        PORTD &= ~(1 << RIGHT_MOTOR_PHASE);
+    } else {
+        PORTD |= (1 << RIGHT_MOTOR_PHASE);
     }
-    
-    // if motor PWM pin is not connected to the timer - connect it 
-    if (motor_side == MOTOR_SIDE_RIGHT) {
-        if (!(TCCR0A & (1 << COM0A1))) {
-            TCCR0A |= (1 << COM0A1);
-        }
-    } else if (motor_side == MOTOR_SIDE_LEFT) {
-        if (!(TCCR0A & (1 << COM0B1))) {
-            TCCR0A |= (1 << COM0B1);
-        }
-    } 
 }
+
+static void left_motor_spin(uint8_t direction) {
+    TCCR0A |= (1 << COM0B1);
+
+    if (direction == DIRECTION_FORWARD) {
+        PORTD &= ~(1 << LEFT_MOTOR_PHASE);
+    } else {
+        PORTD |= (1 << LEFT_MOTOR_PHASE);
+    }
+}
+
+static void right_motor_stop(void) {
+    TCCR0A &= ~(1 << COM0A1);
+}
+
+static void left_motor_stop(void) {
+    TCCR0A &= ~(1 << COM0B1);
+}
+
 
 /* Function definitions from motors.h */
 
@@ -71,33 +59,33 @@ void PWM_init(void) {
     TCCR0B |= (1 << CS02);      // prescaler set to 256; PWM freq ~62,5kHz
 }
 
-void PWM_set_duty_cycle(const uint16_t adc_value) {
-    uint16_t PWM_value = (uint32_t)(adc_value * 255) / 1024;
-    OCR0A = (uint8_t)PWM_value;
-    OCR0B = (uint8_t)PWM_value;
+void PWM_set_duty_cycle(uint16_t adc_value) {
+    uint8_t PWM_value = (uint32_t)(adc_value) * 255 / 1024;
+    OCR0A = PWM_value;
+    OCR0B = PWM_value;
 }
 
 void robot_move_forward(void) {
-    motor_spin(MOTOR_SIDE_RIGHT, DIRECTION_FORWARD);
-    motor_spin(MOTOR_SIDE_LEFT, DIRECTION_FORWARD);
+    right_motor_spin(DIRECTION_FORWARD);
+    left_motor_spin(DIRECTION_FORWARD);
 }
 
 void robot_move_backward(void) {
-    motor_spin(MOTOR_SIDE_RIGHT, DIRECTION_BACKWARD);
-    motor_spin(MOTOR_SIDE_LEFT, DIRECTION_BACKWARD);
+    right_motor_spin(DIRECTION_BACKWARD);
+    left_motor_spin(DIRECTION_BACKWARD);
 }
 
 void robot_turn_left(void) {
-    motor_stop(MOTOR_SIDE_RIGHT);
-    motor_spin(MOTOR_SIDE_LEFT, DIRECTION_FORWARD);
+    robot_move_forward();
+    left_motor_stop();
 }
 
 void robot_turn_right(void) {
-    motor_stop(MOTOR_SIDE_LEFT);
-    motor_spin(MOTOR_SIDE_RIGHT, DIRECTION_FORWARD);
+    robot_move_forward();
+    right_motor_stop();
 }
 
 void robot_stop(void) {
-    motor_stop(MOTOR_SIDE_RIGHT);
-    motor_stop(MOTOR_SIDE_LEFT);
+    right_motor_stop();
+    left_motor_stop();
 }

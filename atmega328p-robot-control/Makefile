@@ -1,6 +1,6 @@
 FILENAME	= main
-PORT		= /dev/tty.wchusbserial10
-#PORT		= /dev/ttyUSB0
+#PORT		= /dev/tty.wchusbserial10
+PORT		= /dev/ttyUSB4
 DEVICE		= atmega328p
 PROGRAMMER	= arduino
 BAUD		= 115200
@@ -9,13 +9,13 @@ COMPILE		= avr-gcc -Os -mmcu=$(DEVICE) -I inc # Add 'inc' folder to include path
 default: compile upload clean
 
 compile:
-	$(COMPILE) -c $(FILENAME).c -o $(FILENAME).o
+	$(COMPILE) -c $(FILENAME).c -o $(FILENAME).o	
+	$(COMPILE) -c src/usart.c -o usart.o		# Compile usart.c file
 	$(COMPILE) -c src/motors.c -o motors.o		# Compile motors.c file
 	$(COMPILE) -c src/lcd.c -o lcd.o			# Compile lcd.c file
 	$(COMPILE) -c src/adc.c -o adc.o			# Compile adc.c file
-	$(COMPILE) -c src/usart.c -o usart.o		# Compile usart.o file
 	$(COMPILE) -c src/HC-SR04.c -o HC-SR04.o	# Compile HC-SR04.c file
-	$(COMPILE) -o $(FILENAME).elf $(FILENAME).o motors.o lcd.o adc.o HC-SR04.o
+	$(COMPILE) -o $(FILENAME).elf $(FILENAME).o usart.o motors.o lcd.o adc.o HC-SR04.o
 	avr-objcopy -j .text -j .data -O ihex $(FILENAME).elf $(FILENAME).hex
 	avr-size $(FILENAME).elf
 

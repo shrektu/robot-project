@@ -3,11 +3,12 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <float.h>
 
 #include <util/delay.h>
 
-/* Static helper functions */
 
+/* Static helper functions */
 
 static void lcd_out_nibble(uint8_t nibbleToWrite)
 {

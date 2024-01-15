@@ -27,7 +27,7 @@ void DRV8835_init(void);
 void PWM_init(void);
 
 /* This function sets PWM duty cycle according to the potentiometer setting */
-void PWM_set_duty_cycle(const uint16_t adc_value);
+void PWM_set_duty_cycle(uint16_t adc_value);
 
 /* This function moves the robot forward */
 void robot_move_forward(void); 

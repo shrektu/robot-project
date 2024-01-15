@@ -9,17 +9,17 @@
 
 
 #define BAUD		(9600)
-#define UBBR		((F_CPU) / (16) / ((BAUD) - (1)))
+#define UBRRVAL     ((F_CPU/(BAUD*16UL))-1)
 
 
 /* Function definitions from usart.h */
 
 void USART_init(void) {
-	UBRR0L = (uint8_t)UBBR;
-	UBRR0H = (uint8_t)(UBBR >> 8);
+	UBRR0L = UBRRVAL;
+	UBRR0H = UBRRVAL >> 8;
 
-	UCSR0B = (1 << RXEN0) | (1 << TXEN0) | (1 << RXCIE0);
-    UCSR0C = (1 << UCSZ01) | (1 << UCSZ00); 
+	UCSR0B |= (1 << RXEN0) | (1 << TXEN0) | (1 << RXCIE0); // Enable RX, TX, and RX complete interrupt
+    UCSR0C |= (1 << UCSZ01) | (1 << UCSZ00); // 8-bit data
 }
 
 void USART_transmit(uint8_t data) {

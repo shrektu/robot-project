@@ -5,6 +5,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <float.h>
 
 #include <avr/io.h>
 #include <util/delay.h>
@@ -17,8 +18,17 @@
 #include "inc/HC-SR04.h"
 
 
-#define LCD_FUNCTIONS_CNT       (3)  // Number of LCD functions
-#define MOTORS_FUNCTIONS_CNT     (5)  // Number of motor functions
+/* Macro definitions for commands received by USART */
+
+#define STOP                (48)
+#define FORWARD             (49)
+#define LEFT                (51)
+#define RIGHT               (52)
+#define BACK                (50)
+#define VIEW_TEMP           (53)
+#define VIEW_PWM            (54)
+#define VIEW_DISTANCE       (55)
+
 
 
 // This function initialises Timer2
@@ -31,9 +41,6 @@ static void read_potentiometer(void);
 // This function reads ADC value from LM35DZ temperature sensor
 static void read_lm35(void);
 
-// This function calculates distance in cm based on pulse duration
-static uint8_t calc_distance(uint16_t pulse_duration);
-
 
 // This function shows the temperature on the LCD
 static void show_temp(void);  
@@ -42,41 +49,11 @@ static void show_temp(void);
 static void show_pwm_duty_cycle(void);  
 
 // This function shows the distance to the obstacle on the LCD               
-static void show_distance(void);       
+static void show_distance(void);
 
+// This function refreshes the current LCD view
+static void refresh_view(uint8_t current_view);  
 
-// Array of function pointers to each lcd function
-static void (*lcd_functions[LCD_FUNCTIONS_CNT])(void) = {
-    show_temp,
-    show_pwm_duty_cycle,
-    show_distance
-};
-
-// Array of function pointers to each motors function
-static void (*motors_functions[MOTORS_FUNCTIONS_CNT])(void) = {
-    robot_stop,
-    robot_move_forward,
-    robot_move_backward,
-    robot_turn_left,
-    robot_turn_right
-};
-
-
-// Enumeration type to index functions in the lcd functions array
-typedef enum {
-    SHOW_TEMP,
-    SHOW_PWM_DUTY_CYCLE,
-    SHOW_DISTANCE
-}LCD_FUNCTION_t;
-
-// Enumeration type to index functions in the motor functions array
-typedef enum {
-    STOP,
-    GO_FORWARD,
-    GO_LEFT,
-    GO_RIGHT,
-    GO_BACK,
-}MOTOR_FUNCTION_t;
 
 
 static volatile uint16_t echo_width = 0;
@@ -85,26 +62,28 @@ static volatile uint8_t echo_flag = 0;
 static volatile uint16_t adc_channel0_value = 0;
 static volatile uint16_t adc_channel1_value = 0;
 
-static volatile uint8_t duty_cycle_percent = 0;
 static volatile uint16_t distance = 0;
 
 static volatile uint8_t timer = 1;
 
-char buf [10];
+static volatile uint8_t rx_usart_data = STOP;
+static volatile uint8_t current_view = 0;
 
-static volatile LCD_FUNCTION_t current_lcd_function = SHOW_TEMP;
-static volatile MOTOR_FUNCTION_t current_motors_function = STOP;
-
+static void handle_command(uint8_t cmd);
 
 int main(void) {
+
     lcd_init();
-    ADC_init();
-    timer2_init();
+    DRV8835_init();
+    PWM_init();
     HCSR04_init();
+    ADC_init();
+    USART_init();
+    timer2_init();
 
     sei();
 
-    while(1) {
+    while(1) { 
     }
 
     return EXIT_SUCCESS;
@@ -131,7 +110,7 @@ static void read_potentiometer(void) {
 
 static void read_lm35(void) {
     // set ADMUX to read channel 1
-    ADMUX |= (1 << MUX0);
+    ADMUX |= ((1 << MUX0));
 
     ADC_start_conversion();
 }
@@ -141,13 +120,15 @@ static uint8_t calc_distance(uint16_t pulse_duration) {
 }
 
 static void show_temp(void) {
+    lcd_clear();
     lcd_go_to(0, 0);
     lcd_print_text("Temperature:");
     lcd_go_to(0, 1);
-    lcd_printf("%u *C", adc_channel1_value * 5 * 100 / 1024);
+    lcd_printf("%d *C", (uint32_t)adc_channel1_value * 5 / 1024);
 }
 
 static void show_pwm_duty_cycle(void) {
+    lcd_clear();
     lcd_go_to(0, 0);
     lcd_print_text("PWM duty cycle:");
     lcd_go_to(0, 1);
@@ -155,6 +136,7 @@ static void show_pwm_duty_cycle(void) {
 }
 
 static void show_distance(void) {
+    lcd_clear();
     lcd_go_to(0, 0);
     lcd_print_text("Distance:");
     lcd_go_to(0, 1);
@@ -162,22 +144,73 @@ static void show_distance(void) {
     if (distance > 100) {
         lcd_print_text("100+ cm");
     } else {
-        lcd_printf("%u cm", distance);
+        lcd_printf("%d cm", distance);
+    }
+}
+
+static void refresh_view(uint8_t current_view) {
+    if (current_view == VIEW_TEMP) {
+        show_temp();
+    } else if (current_view == VIEW_PWM) {
+        show_pwm_duty_cycle();
+    } else if (current_view == VIEW_DISTANCE) {
+        show_distance();
+    }
+}
+
+static void handle_command(uint8_t cmd) {
+    switch (cmd) {
+        case FORWARD:
+        robot_move_forward();
+        break;
+    case BACK:
+        robot_move_backward();
+        break;
+    case LEFT:
+        robot_turn_left();
+        break;
+    case RIGHT:
+        robot_turn_right();
+        break;
+    case VIEW_TEMP:
+        show_temp();
+        current_view = VIEW_TEMP;
+        break;
+    case VIEW_PWM:
+        show_pwm_duty_cycle();
+        current_view = VIEW_PWM;
+        break;
+    case VIEW_DISTANCE:
+        show_distance();
+        current_view = VIEW_DISTANCE;
+        break;
+    case STOP:
+        robot_stop();
+        break;
+    default:
+        robot_stop();
+        break;
     }
 }
 
 ISR(TIMER2_COMPA_vect) {
-    if (timer % 6 == 0) {
-        if (echo_flag) {
-            lcd_clear();
-            show_distance();
-            echo_flag = 0;
-        }
+    // read_lm35();
+    // read_potentiometer();
+    // HCSR04_start_measurement();
+    // refresh_view(current_view);
+
+    if (timer == 3) {
+        read_potentiometer();
+    } else if (timer == 4) {
         HCSR04_start_measurement();
-        timer = 1;
-    } else {
-        timer += 1;
+    } else if (timer == 2) {
+        refresh_view(current_view);
     }
+
+    timer++;
+    if (timer > 4) {
+        timer = 1;
+    }   
 }
 
 ISR(ADC_vect) {
@@ -186,25 +219,25 @@ ISR(ADC_vect) {
         adc_channel1_value = ADC;
     } else {
         adc_channel0_value = ADC;
+        PWM_set_duty_cycle(adc_channel0_value);
     }
 }
 
 ISR(USART_RX_vect) {
-    if (UDR0 != 0xFF) {
-        uint8_t received_command = UDR0;
-    }
+    rx_usart_data = UDR0;
+    handle_command(rx_usart_data);
 }
 
 ISR(TIMER1_CAPT_vect) {
     static uint16_t last_capture;
 
     if (!(TCCR1B & (1 << ICES1))) {
-        echo_width = (ICR1 - last_capture) / 2;     // Timer1 prescaler is 8, F_CPU is 16M so timer1 frequency is 2MHz. 
+        echo_width = ICR1 / 2 - last_capture;     // Timer1 prescaler is 8, F_CPU is 16M so timer1 frequency is 2MHz. 
                                                     // Division by 2 makes it 1 MHz - 1us
         echo_flag = 1;
     }
     
-    last_capture = ICR1;
+    last_capture = ICR1 / 2;
     // change interrupt trigger to the other edge
     TCCR1B ^= (1 << ICES1);
 }
