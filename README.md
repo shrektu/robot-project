@@ -26,7 +26,7 @@ Dodatkowo, robot jest wyposażony w wyświetlacz LCD, który prezentuje aktualne
 
 ### Instrukcja obsługi
 
-    Uruchomienie robota: Podłącz oba mikrokontrolery (ATmega328p i ESP32) zgodnie z instrukcją. Uruchom robot.
+    Uruchomienie robota: Podłącz oba mikrokontrolery (ATmega328p i ESP32). Uruchom robota.
 
     Połączenie z serwerem: Na telefonie połącz się z siecią WiFi utworzoną przez ESP32. Otwórz przeglądarkę internetową i przejdź pod adres serwera (domyślnie: http://192.168.4.1).
 
