@@ -38,3 +38,6 @@ Dodatkowo, robot jest wyposażony w wyświetlacz LCD, który prezentuje aktualne
 #### Autorzy
 
     Sebastian Smolik
+
+Ostatnia zmiana:
+    15.01.2024

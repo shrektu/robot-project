@@ -65,14 +65,14 @@ static volatile uint16_t echo_width = 0;
 static volatile uint8_t echo_flag = 0;
 
 static volatile uint16_t adc_channel0_value = 0;
-static volatile uint16_t adc_channel3_value = 0;
+static volatile uint16_t adc_channel1_value = 0;
 
 static volatile uint16_t distance = 0;
 
 static volatile uint8_t timer = 1;
 
 static volatile uint8_t rx_usart_data = STOP;
-static volatile uint8_t current_view = VIEW_TEMP;
+static volatile uint8_t current_view = VIEW_PWM;
 
 
 int main(void) {
@@ -107,14 +107,14 @@ static void timer2_init(void) {
 
 static void read_potentiometer(void) {
     // set ADMUX to read channel 0
-    ADMUX &= ~(1 << MUX3) & ~(1 << MUX2) & ~(1 << MUX1) & ~(1 << MUX0);
+    ADMUX &= ~(1 << MUX0);
 
     ADC_start_conversion();
 }
 
 static void read_lm35(void) {
-    // set ADMUX to read channel 3
-    ADMUX |= ((1 << MUX0) | (1 << MUX1));
+    // set ADMUX to read channel 1
+    ADMUX |= (1 << MUX0);
 
     ADC_start_conversion();
 }
@@ -128,7 +128,7 @@ static void show_temp(void) {
     lcd_go_to(0, 0);
     lcd_print_text("Temperature:");
     lcd_go_to(0, 1);
-    lcd_printf("%u *C", (uint32_t)adc_channel3_value * 5 * 100 / 1024);
+    lcd_printf("%u *C", (uint32_t)adc_channel1_value * 5 * 100 / 1024);
 }
 
 static void show_pwm_duty_cycle(void) {
@@ -136,7 +136,7 @@ static void show_pwm_duty_cycle(void) {
     lcd_go_to(0, 0);
     lcd_print_text("PWM duty cycle:");
     lcd_go_to(0, 1);
-    lcd_printf("%d %%", (uint32_t)adc_channel0_value * 100 / 1024);
+    lcd_printf("%u %%", (uint32_t)adc_channel0_value * 100 / 1024);
 }
 
 static void show_distance(void) {
@@ -198,26 +198,26 @@ static void handle_command(uint8_t cmd) {
 }
 
 ISR(TIMER2_COMPA_vect) {
-    if (timer == 8) {
+    if (timer == 4) {
         read_potentiometer();
     } else if (timer == 5) {
         HCSR04_start_measurement();
-    } else if (timer == 3) {
+    } else if (timer == 6) {
         refresh_view(current_view);
-    } else if (timer == 20) {
+    } else if (timer == 10) {
         read_lm35();
     }
 
     timer++;
-    if (timer > 20) {
+    if (timer > 10) {
         timer = 1;
-    }   
+    }  
 }
 
 ISR(ADC_vect) {
     // check which channel is read
-    if (ADMUX & (1 << MUX0) | (1 << MUX1)) {
-        adc_channel3_value = ADC;
+    if (ADMUX & (1 << MUX0)) {
+        adc_channel1_value = ADC;
     } else {
         adc_channel0_value = ADC;
         PWM_set_duty_cycle(adc_channel0_value);

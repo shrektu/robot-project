@@ -8,6 +8,8 @@
 void ADC_init(void) {
     ADMUX |= (1 << REFS0);
     ADCSRA |= ((1 << ADEN) | (1 << ADIE) | (1 << ADPS0) | (1 << ADPS1) | (1 << ADPS2)); // presc 128
+    DDRC &= ~(1 << PC0);
+    DDRC &= ~(1 << PC3);
 }
 
 void ADC_start_conversion(void) {
