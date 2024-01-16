@@ -30,6 +30,7 @@
 #define VIEW_DISTANCE       (55)
 
 
+/* Static functions for main */
 
 // This function initialises Timer2
 static void timer2_init(void); 
@@ -54,22 +55,25 @@ static void show_distance(void);
 // This function refreshes the current LCD view
 static void refresh_view(uint8_t current_view);  
 
+// This function handles command received from USART 
+static void handle_command(uint8_t cmd);
 
+
+/* Static variables global to main */
 
 static volatile uint16_t echo_width = 0;
 static volatile uint8_t echo_flag = 0;
 
 static volatile uint16_t adc_channel0_value = 0;
-static volatile uint16_t adc_channel1_value = 0;
+static volatile uint16_t adc_channel3_value = 0;
 
 static volatile uint16_t distance = 0;
 
 static volatile uint8_t timer = 1;
 
 static volatile uint8_t rx_usart_data = STOP;
-static volatile uint8_t current_view = 0;
+static volatile uint8_t current_view = VIEW_TEMP;
 
-static void handle_command(uint8_t cmd);
 
 int main(void) {
 
@@ -109,8 +113,8 @@ static void read_potentiometer(void) {
 }
 
 static void read_lm35(void) {
-    // set ADMUX to read channel 1
-    ADMUX |= ((1 << MUX0));
+    // set ADMUX to read channel 3
+    ADMUX |= ((1 << MUX0) | (1 << MUX1));
 
     ADC_start_conversion();
 }
@@ -124,7 +128,7 @@ static void show_temp(void) {
     lcd_go_to(0, 0);
     lcd_print_text("Temperature:");
     lcd_go_to(0, 1);
-    lcd_printf("%d *C", (uint32_t)adc_channel1_value * 5 / 1024);
+    lcd_printf("%u *C", (uint32_t)adc_channel3_value * 5 * 100 / 1024);
 }
 
 static void show_pwm_duty_cycle(void) {
@@ -194,29 +198,26 @@ static void handle_command(uint8_t cmd) {
 }
 
 ISR(TIMER2_COMPA_vect) {
-    // read_lm35();
-    // read_potentiometer();
-    // HCSR04_start_measurement();
-    // refresh_view(current_view);
-
-    if (timer == 3) {
+    if (timer == 8) {
         read_potentiometer();
-    } else if (timer == 4) {
+    } else if (timer == 5) {
         HCSR04_start_measurement();
-    } else if (timer == 2) {
+    } else if (timer == 3) {
         refresh_view(current_view);
+    } else if (timer == 20) {
+        read_lm35();
     }
 
     timer++;
-    if (timer > 4) {
+    if (timer > 20) {
         timer = 1;
     }   
 }
 
 ISR(ADC_vect) {
     // check which channel is read
-    if (ADMUX & (1 << MUX0)) {
-        adc_channel1_value = ADC;
+    if (ADMUX & (1 << MUX0) | (1 << MUX1)) {
+        adc_channel3_value = ADC;
     } else {
         adc_channel0_value = ADC;
         PWM_set_duty_cycle(adc_channel0_value);

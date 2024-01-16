@@ -1,6 +1,6 @@
 FILENAME	= main
 #PORT		= /dev/tty.wchusbserial10
-PORT		= /dev/ttyUSB4
+PORT		= /dev/ttyUSB0
 DEVICE		= atmega328p
 PROGRAMMER	= arduino
 BAUD		= 115200
